@@ -1,7 +1,6 @@
 """
-erp_data.py — Realistic ERP-scale dataset generator.
-Produces: 60 suppliers, 500 purchase orders, 120 inventory SKUs, 24-month spend series.
-Dependencies: numpy, stdlib only.
+Generating ERP-scale dataset
+60 suppliers, 500 purchase orders, 120 inventory SKUs, 24-month spend series
 """
 
 from __future__ import annotations
@@ -13,12 +12,10 @@ from typing import Optional
 import numpy as np
 
 
-# ── Seeded RNG for reproducibility ───────────────────────────────
 RNG = random.Random(0xDEADBEEF)
 NP_RNG = np.random.default_rng(42)
 
 
-# ── Constants ─────────────────────────────────────────────────────
 SUPPLIER_NAMES = [
     "Siemens Industrial AG",      "Bosch Supply Chain GmbH",    "BASF Chemicals GmbH",
     "ThyssenKrupp Materials",     "Freudenberg Sealing Tech",   "ZF Friedrichshafen AG",
@@ -53,8 +50,6 @@ ANOMALY_TYPES = ["price_spike","duplicate_po","unusual_quantity",
 STATUSES = ["APPROVED","PENDING","DELIVERED","CANCELLED","DISPUTED"]
 PO_STATUS_WEIGHTS = [0.40, 0.20, 0.25, 0.08, 0.07]
 
-
-# ── Data classes ──────────────────────────────────────────────────
 @dataclass
 class Supplier:
     id:             str
@@ -252,11 +247,9 @@ class ERPDataset:
         }
 
 
-# ── Generator ─────────────────────────────────────────────────────
 def generate_erp_data() -> ERPDataset:
     now = datetime.now()
 
-    # ── Suppliers ─────────────────────────────────────────────────
     suppliers: list[Supplier] = []
     for i, name in enumerate(SUPPLIER_NAMES):
         tier = 1 if RNG.random() > 0.65 else (2 if RNG.random() > 0.40 else 3)
@@ -279,14 +272,12 @@ def generate_erp_data() -> ERPDataset:
         )
         suppliers.append(sup)
 
-    # Build supplier knowledge graph connections
     sup_ids = [s.id for s in suppliers]
     for s in suppliers:
         n_connections = RNG.randint(1, 5)
         others = [sid for sid in sup_ids if sid != s.id]
         s.connections = RNG.sample(others, min(n_connections, len(others)))
 
-    # ── Purchase Orders ───────────────────────────────────────────
     purchase_orders: list[PurchaseOrder] = []
     for i in range(500):
         sup = RNG.choice(suppliers)
@@ -332,7 +323,6 @@ def generate_erp_data() -> ERPDataset:
         )
         purchase_orders.append(po)
 
-    # ── Inventory ─────────────────────────────────────────────────
     comp_names = ["Alpha","Beta","Gamma","Delta","Omega","Sigma","Theta","Lambda"]
     inventory: list[InventorySKU] = []
     for i in range(120):
@@ -352,7 +342,6 @@ def generate_erp_data() -> ERPDataset:
         )
         inventory.append(sku)
 
-    # ── Monthly KPIs (24 months) ──────────────────────────────────
     monthly_kpis: list[MonthlyKPI] = []
     base_spend = 4_800_000.0
     for i in range(24):
@@ -380,8 +369,6 @@ def generate_erp_data() -> ERPDataset:
         monthly_kpis=monthly_kpis,
     )
 
-
-# ── Singleton dataset (generated once at import) ──────────────────
 _DATASET: Optional[ERPDataset] = None
 
 def get_dataset() -> ERPDataset:
